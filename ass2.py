@@ -53,7 +53,7 @@ def main():
             eqn += "={}".format(i+j)
             output_lp_file.write(eqn + "\n")
 
-    output_lp_file.write("3flowConstraints:\n")
+    output_lp_file.write("threeFlowConstraints:\n")
     for i in range(1, X + 1):
         for j in range(1, Z + 1):
             eqn = ""
@@ -69,7 +69,7 @@ def main():
         for j in range(1, Z + 1):
             eqn = ""
             for t in transitNodes:
-                eqn = "3x{}{}{}={}u{}{}{}".format(startNodes[i - 1], t, endNodes[j - 1],i+j,startNodes[i - 1], t, endNodes[j - 1])
+                eqn = "3x{}{}{}-{}u{}{}{}=0".format(startNodes[i - 1], t, endNodes[j - 1],i+j,startNodes[i - 1], t, endNodes[j - 1])
             output_lp_file.write(eqn + "\n")
 
 
@@ -120,6 +120,10 @@ def main():
 
     output_lp_file.write("END\n")
     output_lp_file.close()
+    run_cplex("ass2.lp")
 
+def run_cplex(filename):
+    ret = check_output(["time","cplex", "-c", "\"read {}\"".format(filename), "\"optimize\"", "\"display solution variables -\""]).decode("utf-8")
+    print(ret)
 if __name__ == '__main__':
     main()
