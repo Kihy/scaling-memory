@@ -3,7 +3,9 @@ import argparse
 import sys
 
 NK = 3.0
-
+resultFile=open("resultFile","w").close()
+resultFile = open("resultFile", "r+")
+sys.stdout = resultFile;
 
 def get_nodes(symbol, N):
     """get nodes name as combination of symbol and """
@@ -138,10 +140,16 @@ def generate_lp(X, Y, Z):
 
 def run_cplex(filename):
     """Runs the cplex program and calculate maximum_load, number of links with non-zero capacity and highest capacity link"""
-    command_args = ["time", "cplex", "-c", "read {}".format(filename), "optimize", "display solution variables -"]
-    # print(" ".join(command_args))
-    output = subprocess.check_output(command_args[1:]).decode("utf-8")
 
+
+    command_args = ["time -p cplex -c read {} optimize display solution variables -".format(filename)]
+    # print(" ".join(command_args))
+
+
+    subprocess.run(command_args,shell=True,stdout=sys.stdout)
+
+    output=resultFile.read()
+    # print(output)
     # process output
     # get the solution variables part
     output = output.split("Variable Name           Solution Value\n")[-1]
@@ -155,7 +163,7 @@ def run_cplex(filename):
         try:
             value = float(line[-1])
         except:
-            break;
+            break
         if variableName == "r":
             max_load = value
         if variableName.startswith("c") or variableName.startswith("d"):
