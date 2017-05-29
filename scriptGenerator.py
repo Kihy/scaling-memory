@@ -5,9 +5,9 @@ import sys
 NK = 3.0
 
 
-def get_nodes(symbol, N):
+def get_nodes(symbol, n):
     """get nodes name as combination of symbol and N, used for testing"""
-    nodes = ["{}{}".format(symbol, n) for n in range(1, N + 1)]
+    nodes = ["{}{}".format(symbol, n) for n in range(1, n + 1)]
     return nodes
 
 
@@ -46,7 +46,7 @@ def generate_lp(X, Y, Z, print_result=False):
     # startNodes = get_nodes('S', X)
     # transitNodes = get_nodes('T', Y)
     # endNodes = get_nodes('D', Z)
-    everyNode = set()
+    every_node = set()
     u_set = set()
     links = []
 
@@ -54,20 +54,28 @@ def generate_lp(X, Y, Z, print_result=False):
     output_lp_file = open(filename, "w")
     output_lp_file.write("Minimize\n")
     output_lp_file.write("r\n")
-    output_lp_file.write("Subject to\n")
-    demand_total = 0
+    # eqn="r"
+    # for i in range(1, X + 1):
+    #     for j in range(1, Y + 1):
+    #         eqn+="+c{}{}".format(i,j)
+    #
+    # for i in range(1, Y + 1):
+    #     for j in range(1, Z + 1):
+    #         eqn+="+d{}{}".format(i,j)
+    # output_lp_file.write(eqn)
+    output_lp_file.write("\nSubject to\n")
+
     output_lp_file.write("demandConstraints:\n")
     for i in range(1, X + 1):
         for j in range(1, Z + 1):
             eqn = ""
             for t in range(1, Y + 1):
                 eqn += "x{}{}{}+".format(i, t, j)
-                everyNode.add("x{}{}{}".format(i, t, j))
+                every_node.add("x{}{}{}".format(i, t, j))
             eqn = eqn[:-1]
             eqn += "={}".format(i + j)
-            demand_total += i + j
             output_lp_file.write(eqn + "\n")
-    print(demand_total)
+
     output_lp_file.write("\nthreeFlowConstraints:\n")
     for i in range(1, X + 1):
         for j in range(1, Z + 1):
@@ -92,7 +100,7 @@ def generate_lp(X, Y, Z, print_result=False):
             eqn = ""
             for k in range(1, Z + 1):
                 eqn += "x{}{}{}+".format(i, j, k)
-                everyNode.add("x{}{}{}".format(i, j, k))
+                every_node.add("x{}{}{}".format(i, j, k))
             eqn = eqn[:-1]
             eqn += "-c{}{} <=0".format(i, j)
             links.append("y{}{}".format(i, j))
@@ -104,7 +112,7 @@ def generate_lp(X, Y, Z, print_result=False):
             eqn = ""
             for i in range(1, X + 1):
                 eqn += "x{}{}{}+".format(i, k, j)
-                everyNode.add("x{}{}{}".format(i, k, j))
+                every_node.add("x{}{}{}".format(i, k, j))
             eqn = eqn[:-1]
             eqn += "-d{}{} <= 0".format(k, j)
             links.append("y{}{}".format(k, j))
@@ -122,7 +130,7 @@ def generate_lp(X, Y, Z, print_result=False):
         output_lp_file.write(eqn + "\n")
 
     output_lp_file.write("\nnegativityConstraints:\n")
-    for i in list(everyNode):
+    for i in list(every_node):
         output_lp_file.write("{} >= 0\n".format(i))
 
     output_lp_file.write("r >= 0\n")
@@ -134,16 +142,16 @@ def generate_lp(X, Y, Z, print_result=False):
     output_lp_file.write("END\n")
     output_lp_file.close()
 
-    average, max_load, numLinks, highest_link, highest_capacity = process_cplex(filename)
+    average, max_load, num_links, highest_link, highest_capacity = process_cplex(filename)
 
     if print_result:
         print("Summary for X={}, Y={}, Z={}".format(X, Y, Z))
         print("Average time: {}".format(average))
         print("Maximum load: {}".format(max_load))
-        print("Number of links with non-zero capacity: {}".format(numLinks))
+        print("Number of links with non-zero capacity: {}".format(num_links))
         print("Highest capacity link: {} value: {}".format(highest_link, highest_capacity))
 
-    return average, max_load, numLinks, highest_link, highest_capacity
+    return average, max_load, num_links, highest_link, highest_capacity
 
 
 def process_cplex(filename):
@@ -162,23 +170,23 @@ def process_cplex(filename):
     # get the solution variables part
     output = cplex_output.split("Variable Name           Solution Value\n")[-1]
     highest_capacity = 0
-    numLinks = 0
+    num_links = 0
     max_load = 0
     highest_link = ""
     for line in output.split("\n"):
         line = line.split(" ")
-        variableName = line[0]
+        variable_name = line[0]
         try:
             value = float(line[-1])
-        except:
+        except ValueError:
             break
-        if variableName == "r":
+        if variable_name == "r":
             max_load = value
-        if variableName.startswith("c") or variableName.startswith("d"):
-            numLinks += 1
+        if variable_name.startswith("c") or variable_name.startswith("d"):
+            num_links += 1
             if highest_capacity < value:
                 highest_capacity = value
-                highest_link = variableName
+                highest_link = variable_name
 
     # measure time as average of 10 Runs
     total = 0
@@ -192,7 +200,7 @@ def process_cplex(filename):
 
     average = total / num_runs
 
-    return average, max_load, numLinks, highest_link, highest_capacity
+    return average, max_load, num_links, highest_link, highest_capacity
 
 
 def get_time(time_string):
